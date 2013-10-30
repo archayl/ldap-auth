@@ -1,6 +1,7 @@
 <?php namespace Archayl\LdapAuth;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Auth\Guard;
 
 class LdapAuthServiceProvider extends ServiceProvider {
 
@@ -19,6 +20,10 @@ class LdapAuthServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		$this->package('archayl/ldap-auth');
+
+		$this->app['auth']->extend('ldap', function($app) {
+			new Guard(new LdapAuthUserProvider($app, $app['session.store']));
+		});
 	}
 
 	/**
