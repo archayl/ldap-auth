@@ -1,13 +1,13 @@
 {
     "name": "archayl/ldap-auth",
     "description": "Laravel 4 LDAP authentication using zendframework/zend-authentication",
-	"keywords": ['laravel-4','ldap']
-	"homepage": "http://github.com/archayl/ldap-auth";
+	"keywords": ["laravel-4","ldap"],
+	"homepage": "http://github.com/archayl/ldap-auth",
 	"license": "MIT",
     "authors": [
         {
             "name": "Mohamad Elrashidin Sajeli",
-            "email": "archayl@gmail.com"
+            "email": "archayl@gmail.com",
 			"role": "Developer"
         }
     ],
