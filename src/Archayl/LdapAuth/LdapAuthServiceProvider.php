@@ -22,7 +22,7 @@ class LdapAuthServiceProvider extends ServiceProvider {
 		$this->package('archayl/ldap-auth');
 
 		$this->app['auth']->extend('ldap', function($app) {
-			new Guard(new LdapAuthUserProvider($app, $app['session.store']));
+			return new Guard(new LdapAuthUserProvider($app), $app['session.store']);
 		});
 	}
 
@@ -43,7 +43,7 @@ class LdapAuthServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return array();
+		return array('auth');
 	}
 
 }

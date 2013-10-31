@@ -4,20 +4,12 @@ use Illuminate\Config\Repository;
 use Illuminate\Auth;
 use Zend\Ldap\Ldap;
 
+/**
+ * UserProviderInterface, to comply with Laravel 4 way
+ * of authentication service provider
+ */
 class LdapAuthUserProvider implements Auth\UserProviderInterface
 {
-	/** For config */
-	private $config;
-	
-	/** For ldap object */
-	private $ld;
-
-	/** For app object */
-	private $app;
-
-	/** For ldap options*/
-	private $options;
-
 	/**
 	 * Constructor
 	 *
@@ -25,10 +17,24 @@ class LdapAuthUserProvider implements Auth\UserProviderInterface
 	 */
 	public function __construct($app)
 	{
+		/** Hold app object */
 		$this->app = $app;
-		$this->config = $app['config'];
-		$this->options = $app['config']['ldap'];
-		$this->ld = new \Zend\Ldap\Ldap($options);
+		
+		/** Hold ldap configuration */
+		$this->ldconfig = $this->app['config']['ldap']['connection'];
+
+		/** Instantiate a new Zend Ldap object */
+		$this->ld = new \Zend\Ldap\Ldap($this->ldconfig);
+
+		/** Get customized user settings */
+		$this->settings = $this->app['config']['ldap']['settings'];
+
+		/** 
+		 * Determine server type
+		 * 1 - ?
+		 * 2 - OpenLdap
+		 */
+		$this->serverType = $this->ld->getRootDse()->getServerType();
 	}
 
 	/**
@@ -38,9 +44,18 @@ class LdapAuthUserProvider implements Auth\UserProviderInterface
 	 *
 	 * @return Illuminate\Auth\GenericUser|null
 	 */
-	public function retrieveByID($idenfitier)
+	public function retrieveByID($identifier)
 	{
-		// @todo
+		$filter = $this->settings['userFilter'].'='.$identifier;
+
+		$data = $this->ld->search($filter)->getFirst();
+
+		if(!count($data))
+			return NULL;
+
+		$attributes = $this->setInfoArray($data);
+
+		return new LdapUser($attributes);
 	}
 
 	/**
@@ -52,7 +67,16 @@ class LdapAuthUserProvider implements Auth\UserProviderInterface
 	 */
 	public function retrieveByCredentials(array $credentials)
 	{
-		dd($this->ld->exists($credentials['username']));
+		$filter = $this->settings['userFilter'].'='.$credentials['username'];
+
+		$data = $this->ld->search($filter)->getFirst();
+
+		if(!count($data))
+			return NULL;
+
+		$attributes = $this->setInfoArray($data);
+
+		return new LdapUser($attributes);
 	}
 
 	/**
@@ -65,6 +89,23 @@ class LdapAuthUserProvider implements Auth\UserProviderInterface
 	 */
 	public function validateCredentials(Auth\UserInterface $user, array $credentials)
 	{
-		// @todo
+		$attributes = new \Zend\Ldap\Attribute();
+		$password = $attributes->createPassword($credentials['password'],\Zend\Ldap\Attribute::PASSWORD_HASH_SHA);
+		return $password == $user->getAuthPassword();
+	}
+
+	/**
+	 * Data mapping
+	 *
+	 * @param array $data
+	 *
+	 * @return array
+	 */
+	public function setInfoArray($data)
+	{
+		$attributes['id'] = $data[$this->settings['userFilter']][0];
+		$attributes['password'] = $data['userpassword'][0];
+
+		return $attributes;
 	}
 }
